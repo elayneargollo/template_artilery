@@ -1,0 +1,21 @@
+config:
+  target: "http://localhost:5221/Arquivo"
+  phases:
+    - duration: 60
+      arrivalCount: 5
+  processor: "./script-send-file.js"
+
+scenarios:
+  - flow:
+      - log: "Upload for file"
+      - post:
+          url: "http://localhost:5221/Arquivo/UploadFile"
+          # headers:
+          #   authorization: "Bearer {{ token }}"
+          beforeRequest: "setFile"
+          formData:
+            file:
+              value: "{{ fileContent }}"
+              options:
+                filename: 'diploma.pdf'
+                contentType: 'text/plain'
