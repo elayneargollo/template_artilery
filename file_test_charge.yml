@@ -5,29 +5,39 @@ config:
       arrivalCount: 5
   processor: "./script-send-file.js"
 
-  # before:
-  #   flow:
-  #     - log: "Obter token"
-  #     - post:
-  #         url: "http://localhost:8090/api/account/login"
-  #         json:
-  #           username: "elayne"
-  #           password: "develop123"
-  #         capture:
-  #           - json: $.id_token
-  #             as: token
+  before:
+    flow:
+      - log: "Obter token"
+      - post:
+          url: "http://localhost:8090/api/account/login"
+          json:
+            username: "elayne"
+            password: "develop123"
+          capture:
+            - json: $.id_token
+              as: token
 
 scenarios:
-  - flow:
+  # POST
+  - name: upload-scenario
+    flow:
       - log: "Upload for file"
       - post:
-          url: "http://localhost:5221/Arquivo/UploadFile"
-          # headers:
-          #   authorization: "Bearer {{ token }}"
           beforeRequest: "setFile"
-          formData:
-            file:
-              value: "{{ fileContent }}"
-              options:
-                filename: 'diploma.pdf'
-                contentType: 'text/plain'
+          url: "/UploadFile"
+          headers:
+            authorization: "Bearer {{ token }}"
+          capture:
+            json: "$.key"
+            as: "key"
+          expect:
+            - statusCode: 200            
+      - log: "key: {{ key }}"
+  #GET ALL
+ - log: "Listar todos os livros"
+      - get:
+          url: "http://localhost:8090/api/Book/v1"
+          headers:
+            authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
