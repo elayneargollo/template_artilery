@@ -31,7 +31,7 @@ after:
 
 scenarios:
   # POST
-  - name: object-storage-scenario
+  - name: multi-test
     flow:
       - post:
           beforeRequest: "setupMultipartFormData"
