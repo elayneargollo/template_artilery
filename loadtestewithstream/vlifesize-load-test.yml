@@ -1,0 +1,67 @@
+config:
+  target: 'http://localhost:5059'
+  phases:
+    - duration: 60
+      arrivalRate: 80
+  http:
+    timeout: 30
+  processor: "./processor.js"
+before:
+  flow:
+    - log: "autenticando..."
+    - post:
+        url: "/api/login"
+        json:
+          login: ""
+          password: ""
+        headers:
+          Content-Type: "application/json"
+        capture:
+          json: "$.token"
+          as: "token"
+        expect:
+          - statusCode: 200
+
+scenarios:
+  - name: vlifesize-load-tests
+    flow:
+      - log: "GET PAGE PADRAO ..."
+      - get:
+          beforeRequest: "generateData"
+          url: "/Video/page={{ page }}&itemsByPage={{ size }}&initialPeriod={{initialPeriod}}&finalPeriod={{finalPeriod}}&filteredByVideoName=false&videoName&idVideo"
+          headers:
+            authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+      - log: "DOWNLOAD ..."
+      - get:
+          beforeRequest: "sortVideoId"
+          url: "/Video/download?idVideo={{idVideo}}"
+          headers:
+            authorization: "Bearer {{ token }}"
+      - log: "EXISTS VIDEO ..."
+      - get:
+          beforeRequest: "sortVideoId"
+          url: "/Video/existsVideoById?idVideo={{idVideo}}"
+          headers:
+            authorization: "Bearer {{ token }}"
+          capture:
+            - json: "$.storedLocation"
+              as: "storedLocation"
+            - json: "$.fileSize"
+              as: "fileSize"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/Video/findByUserAccessAndIDVideo?idVideo={{idVideo}}}"
+          headers:
+            authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "Video/streamPublicVideo/?hashVideo={{storedLocation}}&fileSize={{fileSize}}"
+          headers:
+            content-type: "video/mp4"
+            accept-ranges: "bytes"
+          expect:
+            - statusCode: 206

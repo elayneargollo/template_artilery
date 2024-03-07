@@ -1,0 +1,69 @@
+config:
+  target: 'https://api'
+  phases:
+    - duration: 20
+      arrivalRate: 2
+      rampTo: 4
+  processor: "./processor.js"
+before:
+  flow:
+    - log: "autenticando..."
+    - post:
+        url: "/api/auth/login"
+        json:
+          user: ""
+          password: ""
+        headers:
+          Content-Type: "application/json"
+        capture:
+          json: "$.accessToken"
+          as: "accessToken"
+        expect:
+          - statusCode: 200
+after:      
+  flow:
+    - log: "apagar arquivos..."
+    - get:
+        beforeRequest: deleteFiles
+        url: "/actuator/health/liveness"
+        expect:
+          - statusCode: 200
+
+scenarios:
+  # POST
+  - name: object-storage-scenario
+    flow:
+      - post:
+          beforeRequest: "setupMultipartFormData"
+          url: "/api/file"
+          headers:
+            authorization: "Bearer {{ accessToken }}"
+          capture:
+            json: "$.key"
+            as: "key"
+          expect:
+            - statusCode: 200            
+  #GET-URL
+      - get:
+          url: "/api/file/url?key={{ key }}"
+          headers:
+            authorization: "Bearer {{ accessToken }}"
+          capture:
+            json: "$.url"
+            as: "url"
+          expect:
+            - statusCode: 200
+  #GET-FILE
+      - get:
+          url: "/api/file?key={{ key }}"
+          headers:
+            authorization: "Bearer {{ accessToken }}"
+          expect:
+            - statusCode: 200
+  # DELETE
+      - delete:
+          url: "/api/file?key={{ key }}"
+          headers:
+            authorization: "Bearer {{ accessToken }}"
+          expect:
+            - statusCode: 200
