@@ -23,7 +23,7 @@ before:
           - statusCode: 200
 
 scenarios:
-  - name: vlifesize-load-tests
+  - name: load-tests
     flow:
       - log: "GET PAGE PADRAO ..."
       - get:
